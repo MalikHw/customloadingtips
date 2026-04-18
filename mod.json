@@ -22,5 +22,6 @@
             "name": "Edit Tips",
             "description": "open the notepad UI to edit your custom loading tips (one per line)"
         }
-    }
+    },
+    "early-load": true
 }
