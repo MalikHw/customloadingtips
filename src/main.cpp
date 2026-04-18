@@ -1,6 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/loader/SettingV3.hpp>
 #include <Geode/modify/LoadingLayer.hpp>
+#include <Geode/ui/Popup.hpp>
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/CCTextInputNode.hpp>
@@ -25,7 +26,7 @@ static std::vector<std::string> getLines() {
 }
 
 // notepad-ahh popup
-class NotepadPopup : public geode::Popup<> {
+class NotepadPopup : public geode::Popup {
 protected:
     CCTextInputNode* m_input = nullptr;
 
