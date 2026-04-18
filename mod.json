@@ -1,5 +1,5 @@
 {
-    "geode": "5.5.3",
+    "geode": "5.6.1",
     "gd": {
         "win": "2.2081",
         "mac": "2.2081",
@@ -7,21 +7,20 @@
         "ios": "2.2081"
     },
     "version": "1.0.0",
-    "id": "malikhw47.smth",
-    "name": "nam",
+    "id": "malikhw47.customloadingtips",
+    "name": "Custom Loading Tips",
     "developer": "MalikHw47",
     "description": "desc.",
-    "tags": ["yes", "yeah"],
+    "tags": ["interface", "customization"],
+    "repository": "https://github.com/MalikHw/customloadingtips"
     "links": {
-        "source": "https://github.com/MalikHw/geode-template",
         "community": "https://discord.gg/G9bZ92eg2n"
     },
-    "settings": {},
-    "suggested": [
-        {
-            "id": "something",
-            "importance": "recommended",
-            "reason": "n"
+    "settings": {
+        "open-notepad": {
+            "type": "custom:open-notepad",
+            "name": "Edit Tips",
+            "description": "open the notepad UI to edit your custom loading tips (one per line)"
         }
-    ]
+    }
 }
