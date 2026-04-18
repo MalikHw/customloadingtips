@@ -1,8 +1,10 @@
 #include <Geode/Geode.hpp>
 #include <Geode/loader/SettingV3.hpp>
+#include <Geode/modify/LoadingLayer.hpp>
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
-#include <Geode/ui/TextInput.hpp>
+#include <Geode/binding/CCTextInputNode.hpp>
+#include <Geode/binding/TextArea.hpp>
 
 using namespace geode::prelude;
 
@@ -27,12 +29,15 @@ class NotepadPopup : public geode::Popup<> {
 protected:
     CCTextInputNode* m_input = nullptr;
 
-    bool setup() override {
+    bool init() {
+        if (!Popup::init(360.f, 280.f))
+            return false;
+
         this->setTitle("Custom Loading Tips");
 
-        auto winSize = this->getContentSize();
+        auto winSize = m_mainLayer->getContentSize();
 
-        // Instructions label
+        // instructions label
         auto hint = CCLabelBMFont::create("One tip per line. Replaces RobTop's loading tips.", "chatFont.fnt");
         hint->setScale(0.45f);
         hint->setColor({180, 180, 180});
@@ -54,15 +59,11 @@ protected:
         m_input = CCTextInputNode::create(inputWidth, inputHeight, "Type your tips here...", "chatFont.fnt");
         m_input->setPosition({winSize.width / 2.f, (winSize.height - 100.f) / 2.f + 10.f});
         m_input->setMaxLabelWidth(inputWidth);
-        m_input->setAllowedChars(
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            "0123456789 .,!?:;'\"-_()[]{}@#$%^&*+=/<>\\|`~\n"
-        );
 
         // load existing saved text
         auto saved = Mod::get()->getSavedValue<std::string>("tips-text", "");
         if (!saved.empty())
-            m_input->setString(saved);
+            m_input->setString(saved.c_str());
 
         m_mainLayer->addChild(m_input);
 
@@ -82,8 +83,7 @@ protected:
 
     void onSave(CCObject*) {
         if (m_input) {
-            Mod::get()->setSavedValue("tips-text", std::string(m_input->getString()));
-            FLAlertLayer::create("Saved", "Your tips have been saved!", "OK")->show();
+            Mod::get()->setSavedValue<std::string>("tips-text", std::string(m_input->getString()));
         }
         this->onClose(nullptr);
     }
@@ -92,7 +92,7 @@ public:
     static NotepadPopup* create() {
         auto ret = new NotepadPopup();
         // 360 wide, 280 tall so it'll be comfortable for multi-line text
-        if (ret->initAnchored(360.f, 280.f)) {
+        if (ret->init()) {
             ret->autorelease();
             return ret;
         }
@@ -129,8 +129,8 @@ public:
 
 class OpenNotepadSettingNodeV3 : public SettingNodeV3 {
 protected:
-    ButtonSprite*            m_buttonSprite = nullptr;
-    CCMenuItemSpriteExtra*   m_button       = nullptr;
+    ButtonSprite*          m_buttonSprite = nullptr;
+    CCMenuItemSpriteExtra* m_button       = nullptr;
 
     bool init(std::shared_ptr<OpenNotepadSettingV3> setting, float width) {
         if (!SettingNodeV3::init(setting, width))
@@ -180,7 +180,7 @@ public:
     }
 
     bool hasUncommittedChanges() const override { return false; }
-    bool hasNonDefaultValue()   const override { return false; }
+    bool hasNonDefaultValue()   const override  { return false; }
 };
 
 SettingNodeV3* OpenNotepadSettingV3::createNode(float width) {
@@ -191,7 +191,7 @@ SettingNodeV3* OpenNotepadSettingV3::createNode(float width) {
 
 // register the custom setting type
 $on_mod(Loaded) {
-    Mod::get()->registerCustomSettingType("open-notepad", &OpenNotepadSettingV3::parse);
+    (void)Mod::get()->registerCustomSettingType("open-notepad", &OpenNotepadSettingV3::parse);
 }
 
 // LoadingLayer
