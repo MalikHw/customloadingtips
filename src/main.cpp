@@ -9,7 +9,7 @@
 
 using namespace geode::prelude;
 
-// helpers so splits on literal \n in the saved string
+// helpers — splits on literal \n in the saved string
 static std::vector<std::string> getLines() {
     auto raw = Mod::get()->getSavedValue<std::string>("tips-text", "");
     std::vector<std::string> lines;
@@ -187,6 +187,7 @@ SettingNodeV3* OpenNotepadSettingV3::createNode(float width) {
 // register the custom setting type
 $on_mod(Loaded) {
     (void)Mod::get()->registerCustomSettingType("open-notepad", &OpenNotepadSettingV3::parse);
+    srand(static_cast<unsigned int>(time(nullptr))); // seed so tips r random
 }
 
 // LoadingLayer
