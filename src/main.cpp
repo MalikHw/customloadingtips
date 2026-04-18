@@ -9,18 +9,21 @@
 
 using namespace geode::prelude;
 
-// helpers
+// helpers so splits on literal \n in the saved string
 static std::vector<std::string> getLines() {
     auto raw = Mod::get()->getSavedValue<std::string>("tips-text", "");
     std::vector<std::string> lines;
-    std::stringstream ss(raw);
-    std::string line;
-    while (std::getline(ss, line)) {
+    size_t pos = 0;
+    while (pos < raw.size()) {
+        auto next = raw.find("\\n", pos);
+        if (next == std::string::npos) next = raw.size();
+        auto chunk = raw.substr(pos, next - pos);
         // trim whitespace
-        auto start = line.find_first_not_of(" \t\r");
-        auto end   = line.find_last_not_of(" \t\r");
+        auto start = chunk.find_first_not_of(" \t\r\n");
+        auto end   = chunk.find_last_not_of(" \t\r\n");
         if (start != std::string::npos)
-            lines.push_back(line.substr(start, end - start + 1));
+            lines.push_back(chunk.substr(start, end - start + 1));
+        pos = next + 2; // skip past "\n"
     }
     return lines;
 }
@@ -31,24 +34,24 @@ protected:
     geode::TextInput* m_textInput = nullptr;
 
     bool init() {
-        if (!Popup::init(360.f, 280.f))
+        if (!Popup::init(380.f, 160.f))
             return false;
 
         this->setTitle("Custom Loading Tips");
 
-        float W = 360.f;
-        float H = 280.f;
+        float W = 380.f;
+        float H = 160.f;
 
         // instructions label
-        auto hint = CCLabelBMFont::create("One tip per line please. replaces RobTop's loading tips.", "chatFont.fnt");
-        hint->setScale(0.42f);
+        auto hint = CCLabelBMFont::create("Separate tips with \\n  (e.g.  tip1\\ntip2\\ntip3)", "chatFont.fnt");
+        hint->setScale(0.40f);
         hint->setColor({180, 180, 180});
         hint->setPosition({W / 2.f, H - 30.f});
         m_mainLayer->addChild(hint);
 
-        // geode::TextInput, stolen from RayDeeUx/Notepad lol
+        // wide single-line input
         float inputW = W - 32.f;
-        m_textInput = geode::TextInput::create(inputW, "Type your tips here...", "chatFont.fnt");
+        m_textInput = geode::TextInput::create(inputW, "tip1\\ntip2\\ntip3...", "chatFont.fnt");
         m_textInput->setCommonFilter(CommonFilter::Any);
         m_textInput->setMaxCharCount(0); // unlimited
 
@@ -84,7 +87,6 @@ protected:
 public:
     static NotepadPopup* create() {
         auto ret = new NotepadPopup();
-        // 360 wide, 280 tall so it'll be comfortable for multi-line text
         if (ret->init()) {
             ret->autorelease();
             return ret;
