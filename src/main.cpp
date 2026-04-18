@@ -36,37 +36,45 @@ protected:
 
         this->setTitle("Custom Loading Tips");
 
-        auto winSize = m_mainLayer->getContentSize();
+        // m_mainLayer is exactly 360x280
+        float W = 360.f;
+        float H = 280.f;
+        float pad = 16.f;
 
         // instructions label
         auto hint = CCLabelBMFont::create("One tip per line. Replaces RobTop's loading tips.", "chatFont.fnt");
-        hint->setScale(0.45f);
+        hint->setScale(0.42f);
         hint->setColor({180, 180, 180});
-        hint->setPosition({winSize.width / 2.f, winSize.height - 42.f});
+        hint->setPosition({W / 2.f, H - 30.f});
         m_mainLayer->addChild(hint);
 
-        // text area bg
+        // text area bg — sits between the hint and the save button
+        float boxY     = 32.f;         // above save button
+        float boxH     = H - 30.f - 20.f - boxY; // gap from hint, gap from title
+        float boxW     = W - pad * 2.f;
+        float boxCentY = boxY + boxH / 2.f;
+
         auto bg = CCScale9Sprite::create("square02b_001.png");
         bg->setColor({0, 0, 0});
-        bg->setOpacity(100);
-        bg->setContentSize({winSize.width - 40.f, winSize.height - 100.f});
-        bg->setPosition({winSize.width / 2.f, (winSize.height - 100.f) / 2.f + 10.f});
+        bg->setOpacity(120);
+        bg->setContentSize({boxW, boxH});
+        bg->setPosition({W / 2.f, boxCentY});
         m_mainLayer->addChild(bg);
 
-        // multi-line text input
-        float inputWidth  = winSize.width - 60.f;
-        float inputHeight = winSize.height - 120.f;
+        // text input — same size as the box, slightly inset
+        float inW = boxW - 8.f;
+        float inH = boxH - 8.f;
 
-        m_input = CCTextInputNode::create(inputWidth, inputHeight, "Type your tips here...", "chatFont.fnt");
-        m_input->setPosition({winSize.width / 2.f, (winSize.height - 100.f) / 2.f + 10.f});
-        m_input->setMaxLabelWidth(inputWidth);
+        m_input = CCTextInputNode::create(inW, inH, "Type your tips here...", "chatFont.fnt");
+        m_input->setPosition({W / 2.f, boxCentY});
+        m_input->setMaxLabelWidth(inW);
+        m_input->setTouchEnabled(true);   // <-- actually makes it clickable
+        m_mainLayer->addChild(m_input);
 
         // load existing saved text
         auto saved = Mod::get()->getSavedValue<std::string>("tips-text", "");
         if (!saved.empty())
             m_input->setString(saved.c_str());
-
-        m_mainLayer->addChild(m_input);
 
         // save button
         auto saveSpr = ButtonSprite::create("Save", "goldFont.fnt", "GJ_button_01.png", 0.8f);
@@ -76,7 +84,7 @@ protected:
 
         auto menu = CCMenu::create();
         menu->addChild(saveBtn);
-        menu->setPosition({winSize.width / 2.f, 18.f});
+        menu->setPosition({W / 2.f, 18.f});
         m_mainLayer->addChild(menu);
 
         return true;
