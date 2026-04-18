@@ -40,13 +40,13 @@ protected:
         float H = 280.f;
 
         // instructions label
-        auto hint = CCLabelBMFont::create("One tip per line. Replaces RobTop's loading tips.", "chatFont.fnt");
+        auto hint = CCLabelBMFont::create("One tip per line please. replaces RobTop's loading tips.", "chatFont.fnt");
         hint->setScale(0.42f);
         hint->setColor({180, 180, 180});
         hint->setPosition({W / 2.f, H - 30.f});
         m_mainLayer->addChild(hint);
 
-        // geode::TextInput — this is what actually works for clicking/typing
+        // geode::TextInput, stolen from RayDeeUx/Notepad lol
         float inputW = W - 32.f;
         m_textInput = geode::TextInput::create(inputW, "Type your tips here...", "chatFont.fnt");
         m_textInput->setCommonFilter(CommonFilter::Any);
