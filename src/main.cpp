@@ -2,65 +2,93 @@
 #include <Geode/loader/SettingV3.hpp>
 #include <Geode/modify/LoadingLayer.hpp>
 #include <Geode/ui/Popup.hpp>
-#include <Geode/ui/TextInput.hpp>
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
+#include <Geode/binding/CCTextInputNode.hpp>
 #include <Geode/binding/TextArea.hpp>
 
 using namespace geode::prelude;
 
-// helpers — splits on literal \n in the saved string
+// helpers — splits on \n (real newlines in the saved string)
 static std::vector<std::string> getLines() {
     auto raw = Mod::get()->getSavedValue<std::string>("tips-text", "");
     std::vector<std::string> lines;
-    size_t pos = 0;
-    while (pos < raw.size()) {
-        auto next = raw.find("\\n", pos);
-        if (next == std::string::npos) next = raw.size();
-        auto chunk = raw.substr(pos, next - pos);
+    std::stringstream ss(raw);
+    std::string line;
+    while (std::getline(ss, line)) {
         // trim whitespace
-        auto start = chunk.find_first_not_of(" \t\r\n");
-        auto end   = chunk.find_last_not_of(" \t\r\n");
+        auto start = line.find_first_not_of(" \t\r");
+        auto end   = line.find_last_not_of(" \t\r");
         if (start != std::string::npos)
-            lines.push_back(chunk.substr(start, end - start + 1));
-        pos = next + 2; // skip past "\n"
+            lines.push_back(line.substr(start, end - start + 1));
     }
     return lines;
+}
+
+// joins lines with real \n for saving
+static std::string joinLines(std::string const& raw) {
+    return raw; // stored as-is, newlines are real \n from CCTextInputNode
 }
 
 // notepad-ahh popup
 class NotepadPopup : public geode::Popup {
 protected:
-    geode::TextInput* m_textInput = nullptr;
+    CCTextInputNode* m_input = nullptr;
 
     bool init() {
-        if (!Popup::init(380.f, 160.f))
+        if (!Popup::init(360.f, 280.f))
             return false;
 
         this->setTitle("Custom Loading Tips");
 
-        float W = 380.f;
-        float H = 160.f;
+        float W = 360.f;
+        float H = 280.f;
+        float pad = 16.f;
+        float boxW = W - pad * 2.f;
 
         // instructions label
-        auto hint = CCLabelBMFont::create("Separate tips with \\n  (e.g.  tip1\\ntip2\\ntip3)", "chatFont.fnt");
-        hint->setScale(0.40f);
+        auto hint = CCLabelBMFont::create("One tip per line.", "chatFont.fnt");
+        hint->setScale(0.42f);
         hint->setColor({180, 180, 180});
         hint->setPosition({W / 2.f, H - 30.f});
         m_mainLayer->addChild(hint);
 
-        // wide single-line input
-        float inputW = W - 32.f;
-        m_textInput = geode::TextInput::create(inputW, "tip1\\ntip2\\ntip3...", "chatFont.fnt");
-        m_textInput->setCommonFilter(CommonFilter::Any);
-        m_textInput->setMaxCharCount(0); // unlimited
+        // box dims — space between hint and save button
+        float boxY = 36.f;
+        float boxH = H - 30.f - 20.f - boxY;
+        float boxCY = boxY + boxH / 2.f;
+
+        // dark bg
+        auto bg = CCScale9Sprite::create("square02b_001.png");
+        bg->setColor({0, 0, 0});
+        bg->setOpacity(120);
+        bg->setContentSize({boxW, boxH});
+        bg->setPosition({W / 2.f, boxCY});
+        m_mainLayer->addChild(bg);
+
+        // CCTextInputNode with a TextArea attached for line wrapping
+        m_input = CCTextInputNode::create(boxW - 8.f, boxH - 8.f, "tip1\ntip2\ntip3", "chatFont.fnt");
+        m_input->setPosition({W / 2.f, boxCY});
+        m_input->setMaxLabelWidth(boxW - 8.f);
+        m_input->setAllowedChars(
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "0123456789 .,!?:;'\"-_()[]{}@#$%^&*+=/<>\\|`~\n"
+        );
+
+        // attach a TextArea so text wraps visually across lines
+        auto textArea = TextArea::create("", "chatFont.fnt", 0.5f, boxW - 12.f,
+            {0.5f, 1.f}, 16.f, false);
+        m_input->addTextArea(textArea);
+
+        // register touch so clicking focuses the input
+        m_input->registerWithTouchDispatcher();
+
+        m_mainLayer->addChild(m_input);
 
         // load saved text
         auto saved = Mod::get()->getSavedValue<std::string>("tips-text", "");
         if (!saved.empty())
-            m_textInput->setString(saved);
-
-        m_mainLayer->addChildAtPosition(m_textInput, Anchor::Center, {0.f, 10.f});
+            m_input->setString(saved);
 
         // save button
         auto saveSpr = ButtonSprite::create("Save", "goldFont.fnt", "GJ_button_01.png", 0.8f);
@@ -77,9 +105,9 @@ protected:
     }
 
     void onSave(CCObject*) {
-        if (m_textInput) {
+        if (m_input) {
             Mod::get()->setSavedValue<std::string>("tips-text",
-                std::string(m_textInput->getString()));
+                std::string(m_input->getString()));
         }
         this->onClose(nullptr);
     }
@@ -87,6 +115,7 @@ protected:
 public:
     static NotepadPopup* create() {
         auto ret = new NotepadPopup();
+        // 360 wide, 280 tall so it'll be comfortable for multi-line text
         if (ret->init()) {
             ret->autorelease();
             return ret;
@@ -187,7 +216,7 @@ SettingNodeV3* OpenNotepadSettingV3::createNode(float width) {
 // register the custom setting type
 $on_mod(Loaded) {
     (void)Mod::get()->registerCustomSettingType("open-notepad", &OpenNotepadSettingV3::parse);
-    srand(static_cast<unsigned int>(time(nullptr))); // seed so tips r random
+    srand(static_cast<unsigned int>(time(nullptr))); // seed so tips are actually random
 }
 
 // LoadingLayer
