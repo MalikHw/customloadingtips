@@ -2,9 +2,9 @@
 #include <Geode/loader/SettingV3.hpp>
 #include <Geode/modify/LoadingLayer.hpp>
 #include <Geode/ui/Popup.hpp>
+#include <Geode/ui/TextInput.hpp>
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
-#include <Geode/binding/CCTextInputNode.hpp>
 #include <Geode/binding/TextArea.hpp>
 
 using namespace geode::prelude;
@@ -28,7 +28,7 @@ static std::vector<std::string> getLines() {
 // notepad-ahh popup
 class NotepadPopup : public geode::Popup {
 protected:
-    CCTextInputNode* m_input = nullptr;
+    geode::TextInput* m_textInput = nullptr;
 
     bool init() {
         if (!Popup::init(360.f, 280.f))
@@ -36,10 +36,8 @@ protected:
 
         this->setTitle("Custom Loading Tips");
 
-        // m_mainLayer is exactly 360x280
         float W = 360.f;
         float H = 280.f;
-        float pad = 16.f;
 
         // instructions label
         auto hint = CCLabelBMFont::create("One tip per line. Replaces RobTop's loading tips.", "chatFont.fnt");
@@ -48,33 +46,18 @@ protected:
         hint->setPosition({W / 2.f, H - 30.f});
         m_mainLayer->addChild(hint);
 
-        // text area bg — sits between the hint and the save button
-        float boxY     = 32.f;         // above save button
-        float boxH     = H - 30.f - 20.f - boxY; // gap from hint, gap from title
-        float boxW     = W - pad * 2.f;
-        float boxCentY = boxY + boxH / 2.f;
+        // geode::TextInput — this is what actually works for clicking/typing
+        float inputW = W - 32.f;
+        m_textInput = geode::TextInput::create(inputW, "Type your tips here...", "chatFont.fnt");
+        m_textInput->setCommonFilter(CommonFilter::Any);
+        m_textInput->setMaxCharCount(0); // unlimited
 
-        auto bg = CCScale9Sprite::create("square02b_001.png");
-        bg->setColor({0, 0, 0});
-        bg->setOpacity(120);
-        bg->setContentSize({boxW, boxH});
-        bg->setPosition({W / 2.f, boxCentY});
-        m_mainLayer->addChild(bg);
-
-        // text input — same size as the box, slightly inset
-        float inW = boxW - 8.f;
-        float inH = boxH - 8.f;
-
-        m_input = CCTextInputNode::create(inW, inH, "Type your tips here...", "chatFont.fnt");
-        m_input->setPosition({W / 2.f, boxCentY});
-        m_input->setMaxLabelWidth(inW);
-        m_input->setTouchEnabled(true);   // <-- actually makes it clickable
-        m_mainLayer->addChild(m_input);
-
-        // load existing saved text
+        // load saved text
         auto saved = Mod::get()->getSavedValue<std::string>("tips-text", "");
         if (!saved.empty())
-            m_input->setString(saved.c_str());
+            m_textInput->setString(saved);
+
+        m_mainLayer->addChildAtPosition(m_textInput, Anchor::Center, {0.f, 10.f});
 
         // save button
         auto saveSpr = ButtonSprite::create("Save", "goldFont.fnt", "GJ_button_01.png", 0.8f);
@@ -91,8 +74,9 @@ protected:
     }
 
     void onSave(CCObject*) {
-        if (m_input) {
-            Mod::get()->setSavedValue<std::string>("tips-text", std::string(m_input->getString()));
+        if (m_textInput) {
+            Mod::get()->setSavedValue<std::string>("tips-text",
+                std::string(m_textInput->getString()));
         }
         this->onClose(nullptr);
     }
