@@ -17,6 +17,7 @@ jobs:
 
         - name: iOS
           os: macos-latest
+          targer: iOS
 
         - name: macOS
           os: macos-latest
